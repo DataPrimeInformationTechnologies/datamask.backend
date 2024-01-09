@@ -5,8 +5,11 @@ import com.data.tools.api.exceptions.Exceptions;
 import com.data.tools.api.exceptions.GlobalException;
 import com.data.tools.api.service.DbMigrationService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.repository.query.Param;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.sql.SQLException;
 
 @RequiredArgsConstructor
 @RestController
@@ -29,4 +32,10 @@ public class DbMigrationController {
         this.dbMigrationService.setConfig(config);
         return ResponseEntity.ok(true);
     }
+
+    @GetMapping("/table")
+    public ResponseEntity<String> migrateTable(@Param("migrationId") Long migrationId,@Param("schemaName") String schemaName,@Param("tableName") String tableName) throws SQLException {
+       return ResponseEntity.ok(dbMigrationService.migrate(migrationId,schemaName,tableName));
+    }
 }
+

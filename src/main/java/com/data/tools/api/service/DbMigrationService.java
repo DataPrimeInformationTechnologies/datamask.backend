@@ -1,5 +1,6 @@
 package com.data.tools.api.service;
 
+import com.data.tools.api.constants.SQLConst;
 import com.data.tools.api.dto.MigrationConfig;
 import com.data.tools.api.entity.DbConfiguration;
 import com.data.tools.api.entity.DbMigration;
@@ -37,9 +38,33 @@ public class DbMigrationService {
     }
 
 
-    public void migrate() throws SQLException {
+    public String migrate(Long migrationId,String schemaName,String tableName) throws SQLException {
+        try {
+            DbMigration dbMigration = this.dbMigrationRepository.findById(migrationId)
+                    .orElseThrow(() -> GlobalException.throwEx(Exceptions.OBJECT_NOT_FOUND_BY_ID,"DbMigration not found by id"));
 
+            Connection sourceConnection = dbConnectionService.getConnectionById(dbMigration.getSource().getId());
+            Statement sourceStatement = sourceConnection.createStatement();
+            ResultSet resultSet = sourceStatement.executeQuery(SQLConst.getTableDDLfromSourceDb(schemaName,tableName));
+            String ddlResult = "";
+            while(resultSet.next())
+            {
+                ddlResult = resultSet.getString(1);
+            }
+            resultSet.close();
+            sourceStatement.close();
+            sourceConnection.close();
 
+            Connection targetConnection = dbConnectionService.getConnectionById(dbMigration.getTarget().getId());
+            Statement targetStatement = targetConnection.createStatement();
+            targetStatement.executeQuery(ddlResult);
+            targetStatement.close();
+            targetConnection.close();
+            return "Migration Complete";
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return "Migration failed: " + e.getMessage();
+        }
     }
 
 
